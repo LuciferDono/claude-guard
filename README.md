@@ -2,6 +2,8 @@
 
 > **Never get a surprise Claude Code bill again.**
 
+![claude-guard demo](demo.gif)
+
 claude-guard is a **cost circuit breaker** for Claude Code. It monitors your API spending in real-time and **automatically blocks tool calls** when you hit your budget — before the damage is done.
 
 Other tools show you the bill after the fact. claude-guard **prevents** the bill.
