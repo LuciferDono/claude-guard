@@ -33,14 +33,22 @@ claude-guard v0.1.0
 
 ---
 
-## the problem
+## who this is for
+
+**claude-guard is for developers running Claude Code with their own API key** — not the Pro/Max subscription.
+
+If you're on the $20/mo Pro or $100–200/mo Max plan, your costs are capped by the subscription. You don't need this.
+
+But if you're using `ANTHROPIC_API_KEY` — because you hit subscription rate limits, your team runs Claude Code on company billing, you're using it in CI/CD, or you got pushed to API access — then every tool call is billed per token. And there's no hard spending cap.
+
+## the problem (API-key users)
 
 | what happens | how much it costs | how long it takes |
 |:---|:---|:---|
 | agent stuck in retry loop | **$200–500** | 30 minutes |
 | forgotten background session overnight | **$1,000–2,000+** | 8 hours |
 | recursive tool calls on large codebase | **$50–150** | 10 minutes |
-| normal day of heavy Claude Code usage | **$20–80** | all day |
+| normal day of heavy API-key usage | **$20–80** | all day |
 
 Claude Code has `sessionLimit` and `dailyLimit` in settings. They pop up a warning. Claude says "noted" and keeps spending.
 
