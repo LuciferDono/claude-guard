@@ -17,11 +17,11 @@ Monthly:  $142.30 / $500  [██████░░░░░░░░░░░�
 
 ## The Problem
 
-Claude Code is powerful. It's also expensive. A single runaway agent loop can burn through hundreds of dollars in minutes. Real users have reported:
+Claude Code is powerful. It's also expensive. A single runaway agent loop can burn through hundreds of dollars in minutes:
 
-- **$42,000 bill** from an overnight agent session ([source](https://www.reddit.com/r/ClaudeAI/comments/1k0qlpx/))
 - **$2,000+ surprise bills** from forgotten background tasks
 - **$500+ daily spikes** when agents get stuck in retry loops
+- Costs compound fast when agents run overnight or hit retry loops
 
 Claude Code's built-in `sessionLimit` and `dailyLimit` only **warn** — they don't **stop**. By the time you see the warning, the money is already gone.
 
