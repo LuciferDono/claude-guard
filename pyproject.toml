@@ -12,16 +12,25 @@ requires-python = ">=3.10"
 authors = [
     {name = "LuciferDono"},
 ]
-keywords = ["claude", "claude-code", "cost", "budget", "api", "guard"]
+keywords = [
+    "claude", "claude-code", "claude-code-plugin", "anthropic",
+    "cost", "budget", "api", "guard", "circuit-breaker",
+    "rate-limit", "spending", "cost-control", "cost-management",
+    "ai", "llm", "developer-tools", "cli",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Quality Assurance",
+    "Topic :: Office/Business :: Financial",
+    "Topic :: Utilities",
+    "Typing :: Typed",
 ]
 
 [project.scripts]
@@ -29,7 +38,9 @@ claude-guard = "claude_guard.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/LuciferDono/claude-guard"
+Repository = "https://github.com/LuciferDono/claude-guard"
 Issues = "https://github.com/LuciferDono/claude-guard/issues"
+Changelog = "https://github.com/LuciferDono/claude-guard/releases"
 
 [tool.setuptools.packages.find]
 include = ["claude_guard*"]
