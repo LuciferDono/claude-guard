@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-guard"
+version = "0.1.0"
+description = "Cost circuit breaker for Claude Code — prevents runaway API spending"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    {name = "LuciferDono"},
+]
+keywords = ["claude", "claude-code", "cost", "budget", "api", "guard"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.scripts]
+claude-guard = "claude_guard.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/LuciferDono/claude-guard"
+Issues = "https://github.com/LuciferDono/claude-guard/issues"
+
+[tool.setuptools.packages.find]
+include = ["claude_guard*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
