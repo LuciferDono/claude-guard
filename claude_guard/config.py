@@ -7,8 +7,20 @@ from pathlib import Path
 from typing import Optional
 
 
-DEFAULT_CONFIG_PATH = Path.home() / ".claude-guard.json"
-DEFAULT_STATE_DIR = Path.home() / ".claude-guard"
+# CLAUDE_GUARD_HOME relocates config and state. Needed for isolated testing
+# (hook scripts run as subprocesses and cannot be monkeypatched), for CI, and
+# for anyone keeping several independent budgets.
+_GUARD_HOME = os.environ.get("CLAUDE_GUARD_HOME")
+_BASE = Path(_GUARD_HOME) if _GUARD_HOME else Path.home()
+
+DEFAULT_CONFIG_PATH = (_BASE / "config.json") if _GUARD_HOME else (_BASE / ".claude-guard.json")
+DEFAULT_STATE_DIR = (_BASE / "state") if _GUARD_HOME else (_BASE / ".claude-guard")
+
+# Finer-grained overrides, honoured above CLAUDE_GUARD_HOME.
+if os.environ.get("CLAUDE_GUARD_CONFIG"):
+    DEFAULT_CONFIG_PATH = Path(os.environ["CLAUDE_GUARD_CONFIG"])
+if os.environ.get("CLAUDE_GUARD_STATE"):
+    DEFAULT_STATE_DIR = Path(os.environ["CLAUDE_GUARD_STATE"]).parent
 
 
 @dataclass
@@ -39,6 +51,11 @@ class Config:
     anomaly: AnomalySettings = field(default_factory=AnomalySettings)
     action_on_limit: str = "deny"       # "deny" = block tools, "warn" = warn only
     action_on_hard_limit: str = "kill"  # "kill" = terminate session
+    # Optional per-model price overrides, keyed by exact model id. Each value is
+    # a dict of USD-per-million-token rates: input, output, cache_read,
+    # cache_write_5m, cache_write_1h. Lets a user correct the bundled pricing
+    # table without waiting for a release when vendor prices change.
+    pricing: dict = field(default_factory=dict)
 
     @classmethod
     def load(cls, path: Optional[Path] = None) -> "Config":
@@ -66,6 +83,8 @@ class Config:
             config.action_on_limit = raw["action_on_limit"]
         if "action_on_hard_limit" in raw:
             config.action_on_hard_limit = raw["action_on_hard_limit"]
+        if isinstance(raw.get("pricing"), dict):
+            config.pricing = raw["pricing"]
 
         return config
 

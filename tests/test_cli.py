@@ -79,7 +79,7 @@ class TestCLICommands:
             capture_output=True, text=True, timeout=10,
         )
         assert result.returncode == 0
-        assert "0.1.0" in result.stdout
+        assert "0.2.0" in result.stdout
 
     def test_cli_status(self):
         result = subprocess.run(

@@ -37,9 +37,15 @@ class Engine:
         self.config = config or Config.load()
         self.state = state or State.load()
 
-    def record_cost(self, amount: float, model: str, session_id: str) -> None:
+    def record_cost(
+        self, amount: float, model: str, session_id: str, autosave: bool = True
+    ) -> None:
         self.state.record_cost(amount, model, session_id)
-        self.state.save()
+        # Batch callers (the watcher, replaying many lines in one scan) pass
+        # autosave=False and save once at the end. Taking the state lock per
+        # record would stall a hook on a large file.
+        if autosave:
+            self.state.save()
 
     def check_budget(self) -> BudgetCheckResult:
         checks = [

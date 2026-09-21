@@ -39,12 +39,16 @@ class TestCalculateCost:
         usage = {"input_tokens": 10000, "output_tokens": 1000,
                  "cache_read_input_tokens": 5000, "cache_creation_input_tokens": 2000}
         cost = calculate_cost("claude-sonnet-4-6", usage)
-        # regular_input = 10000 - 5000 - 2000 = 3000
+        # UPDATED: previously asserted the 0.1.0 bug, which computed
+        # regular_input = input - cache_read - cache_create. The API reports
+        # input_tokens ALREADY EXCLUDING cached tokens (verified in real logs:
+        # input_tokens=3 alongside cache_creation=55614), so subtracting zeroes
+        # out genuine input whenever caching is active, and undercounts.
         expected = (
-            3000 * 3.0 / 1e6
+            10000 * 3.0 / 1e6          # input counted in full
             + 1000 * 15.0 / 1e6
-            + 5000 * 0.375 / 1e6
-            + 2000 * 3.75 / 1e6
+            + 5000 * 0.30 / 1e6        # cache read = 0.1x input
+            + 2000 * 6.00 / 1e6        # unattributed cache write -> 1h rate
         )
         assert abs(cost - expected) < 0.0001
 
@@ -55,12 +59,19 @@ class TestCalculateCost:
         cost_direct = calculate_cost("claude-opus-4-6", usage)
         assert cost_alias == cost_direct
 
-    def test_unknown_model_uses_sonnet_pricing(self):
+    def test_unknown_model_uses_most_expensive_pricing(self):
+        # RENAMED AND INVERTED. This previously asserted that an unrecognised
+        # model was billed at Sonnet rates — the cheapest common tier. For a
+        # cost circuit breaker that is the dangerous direction: a new Opus-class
+        # model would be undercounted ~5x and the breaker would not trip.
+        # Unknown models now price at the most expensive known tier.
         usage = {"input_tokens": 1000, "output_tokens": 500,
                  "cache_read_input_tokens": 0, "cache_creation_input_tokens": 0}
         cost_unknown = calculate_cost("claude-future-9-9", usage)
+        cost_opus = calculate_cost("claude-opus-5", usage)
         cost_sonnet = calculate_cost("claude-sonnet-4-6", usage)
-        assert cost_unknown == cost_sonnet
+        assert cost_unknown == cost_opus
+        assert cost_unknown > cost_sonnet
 
     def test_zero_tokens(self):
         usage = {"input_tokens": 0, "output_tokens": 0}
@@ -156,7 +167,7 @@ class TestSessionWatcher:
             path = self._write_session_file(claude_dir, "sess-123", records)
 
             engine = Engine(config=Config(), state=State())
-            watcher = SessionWatcher(engine, claude_dir=claude_dir)
+            watcher = SessionWatcher(engine, claude_dir=claude_dir, backfill=True)
 
             count = watcher.process_file(path)
             assert count == 2
@@ -177,7 +188,7 @@ class TestSessionWatcher:
                 f.write(json.dumps(record) + "\n")
 
             engine = Engine(config=Config(), state=State())
-            watcher = SessionWatcher(engine, claude_dir=claude_dir)
+            watcher = SessionWatcher(engine, claude_dir=claude_dir, backfill=True)
 
             count1 = watcher.process_file(path)
             assert count1 == 1
@@ -206,7 +217,7 @@ class TestSessionWatcher:
             self._write_session_file(claude_dir, "sess-scan", records)
 
             engine = Engine(config=Config(), state=State())
-            watcher = SessionWatcher(engine, claude_dir=claude_dir)
+            watcher = SessionWatcher(engine, claude_dir=claude_dir, backfill=True)
 
             total = watcher.scan_once()
             assert total == 1
@@ -231,7 +242,7 @@ class TestSessionWatcher:
 
             costs = []
             engine = Engine(config=Config(), state=State())
-            watcher = SessionWatcher(engine, claude_dir=claude_dir, on_cost=lambda c: costs.append(c))
+            watcher = SessionWatcher(engine, backfill=True, claude_dir=claude_dir, on_cost=lambda c: costs.append(c))
             watcher.scan_once()
 
             assert len(costs) == 1
@@ -253,7 +264,7 @@ class TestSessionWatcher:
                     f.write(json.dumps(record) + "\n")
 
             engine = Engine(config=Config(), state=State())
-            watcher = SessionWatcher(engine, claude_dir=claude_dir)
+            watcher = SessionWatcher(engine, claude_dir=claude_dir, backfill=True)
             watcher.process_file(path)
 
             # Truncate and write 1 record

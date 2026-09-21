@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-guard"
-version = "0.1.0"
+version = "0.2.0"
 description = "Cost circuit breaker for Claude Code — prevents runaway API spending"
 readme = "README.md"
 license = "MIT"
@@ -21,7 +21,6 @@ keywords = [
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",

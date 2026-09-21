@@ -20,7 +20,7 @@ Claude Code's built-in limits only **warn**. claude-guard **blocks**.
 ```
 $ claude-guard status
 
-claude-guard v0.1.0
+claude-guard v0.2.0
 
   Session   $  4.82 / $  5.00  [████████████████████░] 96.4%  ⚠ WARNING
   Hourly    $  8.12 / $ 10.00  [████████████████░░░░░] 81.2%  ⚠ WARNING
@@ -202,13 +202,82 @@ claude-guard uninstall                     # remove plugin
 
 costs are calculated per-token using official Anthropic pricing:
 
-| model | input | output | cache read | cache create |
-|:------|------:|-------:|-----------:|-------------:|
-| claude-opus-4-6 | $15.00/M | $75.00/M | $1.875/M | $18.75/M |
-| claude-sonnet-4-6 | $3.00/M | $15.00/M | $0.375/M | $3.75/M |
-| claude-haiku-4-5 | $0.80/M | $4.00/M | $0.08/M | $1.00/M |
+| family | models | input | output | cache read | cache write (5m / 1h) |
+|:-------|:-------|------:|-------:|-----------:|----------------------:|
+| opus | opus-5, 4-8, 4-7, 4-6, 4 | $15.00/M | $75.00/M | $1.50/M | $18.75/M / $30.00/M |
+| sonnet | sonnet-5, 4-6, 4 | $3.00/M | $15.00/M | $0.30/M | $3.75/M / $6.00/M |
+| haiku | haiku-4-5, 4 | $0.80/M | $4.00/M | $0.08/M | $1.00/M / $1.60/M |
 
-unknown models default to sonnet pricing (conservative).
+**Unknown models are priced at the most expensive tier (opus), not the cheapest.**
+This is deliberate and it is the product contract: claude-guard is a safety tool,
+so it errs toward over-estimating. Over-estimating trips the brake early;
+under-estimating means it never trips at all. If a new model ships and this
+table is stale, you get a conservative guess rather than silent free rein.
+
+Prices are a snapshot — verify against [anthropic.com/pricing](https://www.anthropic.com/pricing).
+Override any of them without waiting for a release:
+
+```json
+{
+  "pricing": {
+    "claude-opus-6": {
+      "input": 15.0, "output": 75.0, "cache_read": 1.5,
+      "cache_write_5m": 18.75, "cache_write_1h": 30.0
+    }
+  }
+}
+```
+
+`<synthetic>` records are not billable API calls and are counted as $0.
+
+---
+
+## what it measures (read this once)
+
+**claude-guard measures spend from the moment you install it, not retroactively.**
+
+On first run it baselines: every existing session file is marked as already-read
+and nothing is counted. Without this, installing on a machine with real history
+would record tens of thousands of dollars of past spend, blow through the default
+$50 daily budget instantly, and — with `action_on_hard_limit: "kill"` — terminate
+every session before you typed anything.
+
+Want your history counted anyway? `claude-guard watch --backfill`.
+
+**Every cost record is counted exactly once.** Deduplication is keyed on each
+record's `uuid`. File offsets are only an optimisation; the uuid ledger is the
+guarantee. Rotation, truncation, a wiped state file, or Claude Code firing the
+hook a hundred times all converge on the same total.
+
+**Check that it is actually working:**
+
+```
+$ claude-guard doctor
+```
+
+This is not decoration. The worst failure mode for a guard is the silent one —
+finding no session files, recording no cost, never tripping, and reporting a
+healthy status the whole time. `doctor` exits non-zero if tracking is broken.
+
+---
+
+## 0.2.0 — correctness release
+
+0.1.0 was published with defects that made it a no-op. If you are on it, upgrade.
+
+| fixed | was |
+|:------|:----|
+| session discovery | looked for `projects/*/sessions/*.jsonl`; the real layout has no `sessions/` dir, so it found **zero** files on every machine and never blocked anything |
+| double counting | file offsets lived in memory while the hook builds a new watcher per tool call, so one $3 call read as $15 after five calls, unbounded |
+| model pricing | only knew three models; opus-5 / sonnet-5 / opus-4-7 / opus-4-8 all fell through to sonnet rates, undercounting opus ~5x |
+| cache token maths | subtracted cached tokens from `input_tokens`, which already excludes them |
+| install behaviour | first run billed your entire history and hard-killed every session |
+| file cap | scanned only the 5 most recent sessions; spending elsewhere was invisible |
+| state durability | non-atomic writes, no locking between concurrent hooks |
+| test isolation | the suite wrote to your real `~/.claude-guard/state.json` |
+
+New: `claude-guard doctor`, `--backfill`, per-model pricing overrides,
+`CLAUDE_GUARD_HOME` / `CLAUDE_GUARD_CONFIG` / `CLAUDE_GUARD_STATE` env vars.
 
 ---
 
