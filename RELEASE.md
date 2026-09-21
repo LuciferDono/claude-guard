@@ -9,22 +9,15 @@
 | Built artifacts | `dist/*` pass `twine check`, install clean into a fresh venv |
 | Verified | against a real `~/.claude` with 208 session files |
 | PyPI | **not published** — the name is free (JSON API 404) |
-| Blocker | **authorship: co-founder not named in `pyproject.toml`** |
+| Authorship | solo (`LuciferDono`) — settled, no change needed |
+| Remaining | register the PyPI trusted publisher (one browser step), then tag |
 
-## DO NOT cut a GitHub Release yet
+## Releasing is irreversible — read once
 
 `.github/workflows/publish.yml` fires on `release: published` and uploads to
-PyPI automatically. Creating a release right now would publish 0.2.0 with only
-one author named, and **a PyPI version number can never be reused or edited**.
-
-Fix authorship first:
-
-```toml
-authors = [
-    {name = "Pranav R. Jadhav"},
-    {name = "<CO-FOUNDER NAME>"},
-]
-```
+PyPI automatically. **A PyPI version number can never be reused or edited**, and
+a release cannot be truly unpublished — only yanked, which leaves it visible.
+So the order matters: register the publisher, then tag.
 
 ## You probably do not need an API token
 
